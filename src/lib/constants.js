@@ -1,3 +1,6 @@
+// App version - increment on every deploy
+export const APP_VERSION = "1.0.3";
+
 // Available avatars for kid profiles
 export const AVATARS = [
   { id: "rocket", name: "Rocket", emoji: "🚀" },
