@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileCard from '../components/kids/ProfileCard';
-import { PROFILE_IDS, APP_VERSION } from '../lib/constants';
+import { APP_VERSION } from '../lib/constants';
+import { getProfiles, initializeStorage } from '../lib/storage';
 
 export default function ProfileSelect() {
   const [profiles, setProfiles] = useState([]);
@@ -12,19 +13,12 @@ export default function ProfileSelect() {
     loadProfiles();
   }, []);
 
-  const loadProfiles = async () => {
+  const loadProfiles = () => {
     try {
-      // Load both profiles' public info
-      const profilePromises = PROFILE_IDS.map(async (id) => {
-        const response = await fetch(`/api/profiles-${id}-public`);
-        if (response.ok) {
-          return response.json();
-        }
-        return null;
-      });
-
-      const loadedProfiles = await Promise.all(profilePromises);
-      setProfiles(loadedProfiles.filter(p => p !== null));
+      // Initialize and load profiles from localStorage
+      initializeStorage();
+      const loadedProfiles = getProfiles();
+      setProfiles(loadedProfiles);
     } catch (error) {
       console.error('Failed to load profiles:', error);
     } finally {
@@ -33,6 +27,7 @@ export default function ProfileSelect() {
   };
 
   const handleProfileClick = (profile) => {
+    // Go straight to watch page (no PIN authentication)
     navigate(`/watch/${profile.id}`);
   };
 

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../lib/api';
-import { auth } from '../../lib/auth';
+import { getProfiles, initializeStorage } from '../../lib/storage';
+import { APP_VERSION } from '../../lib/constants';
 import ProfileManager from './ProfileManager';
 
-export default function Dashboard({ onLogout }) {
+export default function Dashboard() {
   const [profiles, setProfiles] = useState([]);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,20 +13,16 @@ export default function Dashboard({ onLogout }) {
     loadProfiles();
   }, []);
 
-  const loadProfiles = async () => {
+  const loadProfiles = () => {
     try {
-      const response = await api.getProfiles();
-      setProfiles(response.profiles);
+      initializeStorage();
+      const loadedProfiles = getProfiles();
+      setProfiles(loadedProfiles);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    auth.clearToken();
-    onLogout();
   };
 
   if (loading) {
@@ -49,15 +45,10 @@ export default function Dashboard({ onLogout }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
+      <header className="bg-white shadow relative">
+        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-gray-900">KiddoTube Parent Dashboard</h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition"
-          >
-            Logout
-          </button>
+          <div className="absolute top-2 right-4 text-xs text-gray-400">v{APP_VERSION}</div>
         </div>
       </header>
 
