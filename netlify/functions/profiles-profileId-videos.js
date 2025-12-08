@@ -4,29 +4,29 @@ import { requireParentAuth, requireAuth } from './utils/auth.js';
 import { getVideoFromUrl } from './utils/youtube.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export default async (req, context) => {
-  if (req.method === 'OPTIONS') {
+export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') {
     return handleOptions();
   }
 
   try {
     // Ensure data is initialized
-    await initializeData(context);
+    await initializeData();
 
     // Extract profileId from path
-    const pathParts = new URL(req.url).pathname.split('/').filter(Boolean);
+    const pathParts = event.path.split('/').filter(Boolean);
     const profileId = pathParts[pathParts.length - 2];
 
-    if (req.method === 'GET') {
+    if (event.httpMethod === 'GET') {
       // Kids can view videos with their auth
-      const payload = requireAuth(req);
+      const payload = requireAuth(event);
 
       // If kid auth, verify it's their profile
       if (payload.role === 'kid' && payload.profileId !== profileId) {
         return errorResponse({ message: 'Unauthorized access to this profile' }, 403);
       }
 
-      const approvals = await getBlob(`approvals_${profileId}`, context);
+      const approvals = await getBlob(`approvals_${profileId}`);
 
       // Filter out blocked videos
       const blockedVideoIds = new Set(approvals.blockedVideos.map(v => v.videoId));
@@ -37,11 +37,11 @@ export default async (req, context) => {
       return successResponse({ videos: approvedVideos });
     }
 
-    if (req.method === 'POST') {
+    if (event.httpMethod === 'POST') {
       // Require parent authentication to add videos
-      requireParentAuth(req);
+      requireParentAuth(event);
 
-      const { videoUrl } = await req.json();
+      const { videoUrl } = JSON.parse(event.body);
 
       if (!videoUrl) {
         return errorResponse({ message: 'Video URL is required' }, 400);
@@ -51,7 +51,7 @@ export default async (req, context) => {
       const videoInfo = await getVideoFromUrl(videoUrl);
 
       // Get current approvals
-      const approvals = await getBlob(`approvals_${profileId}`, context);
+      const approvals = await getBlob(`approvals_${profileId}`);
 
       // Check if video already exists
       const exists = approvals.approvedVideos.some(
@@ -74,7 +74,7 @@ export default async (req, context) => {
       };
 
       approvals.approvedVideos.push(newVideo);
-      await setBlob(`approvals_${profileId}`, approvals, context);
+      await setBlob(`approvals_${profileId}`, approvals);
 
       return successResponse({
         success: true,
@@ -86,4 +86,4 @@ export default async (req, context) => {
   } catch (error) {
     return errorResponse(error, error.message === 'Authentication required' ? 401 : 500);
   }
-};
+}

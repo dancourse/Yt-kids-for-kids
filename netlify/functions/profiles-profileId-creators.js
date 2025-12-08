@@ -4,29 +4,29 @@ import { requireParentAuth } from './utils/auth.js';
 import { getChannelFromUrl } from './utils/youtube.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export default async (req, context) => {
-  if (req.method === 'OPTIONS') {
+export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') {
     return handleOptions();
   }
 
   try {
     // Ensure data is initialized
-    await initializeData(context);
+    await initializeData();
 
     // Require parent authentication
-    requireParentAuth(req);
+    requireParentAuth(event);
 
     // Extract profileId from path
-    const pathParts = new URL(req.url).pathname.split('/').filter(Boolean);
+    const pathParts = event.path.split('/').filter(Boolean);
     const profileId = pathParts[pathParts.length - 2]; // Second to last part
 
-    if (req.method === 'GET') {
-      const approvals = await getBlob(`approvals_${profileId}`, context);
+    if (event.httpMethod === 'GET') {
+      const approvals = await getBlob(`approvals_${profileId}`);
       return successResponse({ creators: approvals.approvedCreators || [] });
     }
 
-    if (req.method === 'POST') {
-      const { channelUrl, approveAllVideos = true } = await req.json();
+    if (event.httpMethod === 'POST') {
+      const { channelUrl, approveAllVideos = true } = JSON.parse(event.body);
 
       if (!channelUrl) {
         return errorResponse({ message: 'Channel URL is required' }, 400);
@@ -36,7 +36,7 @@ export default async (req, context) => {
       const channelInfo = await getChannelFromUrl(channelUrl);
 
       // Get current approvals
-      const approvals = await getBlob(`approvals_${profileId}`, context);
+      const approvals = await getBlob(`approvals_${profileId}`);
 
       // Check if creator already exists
       const exists = approvals.approvedCreators.some(
@@ -56,7 +56,7 @@ export default async (req, context) => {
         addedAt: new Date().toISOString(),
       });
 
-      await setBlob(`approvals_${profileId}`, approvals, context);
+      await setBlob(`approvals_${profileId}`, approvals);
 
       return successResponse({
         success: true,
@@ -68,4 +68,4 @@ export default async (req, context) => {
   } catch (error) {
     return errorResponse(error, error.message === 'Authentication required' ? 401 : 500);
   }
-};
+}

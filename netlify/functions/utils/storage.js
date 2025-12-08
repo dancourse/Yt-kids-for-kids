@@ -1,44 +1,42 @@
 // Netlify Blobs storage utilities
 import { getStore } from '@netlify/blobs';
 
-// Get a blob store instance (requires Netlify function context)
-export function getBlobStore(context) {
-  return getStore({
-    name: 'kiddotube',
-    context
-  });
+// Get a blob store instance
+// In production on Netlify, getStore() auto-detects context
+export function getBlobStore() {
+  return getStore('kiddotube');
 }
 
 // Get data from blob storage
-export async function getBlob(key, context) {
-  const store = getBlobStore(context);
+export async function getBlob(key) {
+  const store = getBlobStore();
   const data = await store.get(key, { type: 'json' });
   return data || null;
 }
 
 // Set data in blob storage
-export async function setBlob(key, value, context) {
-  const store = getBlobStore(context);
+export async function setBlob(key, value) {
+  const store = getBlobStore();
   await store.setJSON(key, value);
 }
 
 // Delete data from blob storage
-export async function deleteBlob(key, context) {
-  const store = getBlobStore(context);
+export async function deleteBlob(key) {
+  const store = getBlobStore();
   await store.delete(key);
 }
 
 // Initialize default data structure if not exists
-export async function initializeData(context) {
-  const config = await getBlob('config', context);
+export async function initializeData() {
+  const config = await getBlob('config');
   if (!config) {
     await setBlob('config', {
       parentPasswordHash: process.env.PARENT_PASSWORD_HASH || '',
       createdAt: new Date().toISOString(),
-    }, context);
+    });
   }
 
-  const profiles = await getBlob('profiles', context);
+  const profiles = await getBlob('profiles');
   if (!profiles) {
     await setBlob('profiles', {
       profiles: [
@@ -57,27 +55,27 @@ export async function initializeData(context) {
           createdAt: new Date().toISOString(),
         },
       ],
-    }, context);
+    });
   }
 
   // Initialize approvals for each profile
   for (const profileId of ['profile_1', 'profile_2']) {
-    const approvals = await getBlob(`approvals_${profileId}`, context);
+    const approvals = await getBlob(`approvals_${profileId}`);
     if (!approvals) {
       await setBlob(`approvals_${profileId}`, {
         profileId,
         approvedCreators: [],
         approvedVideos: [],
         blockedVideos: [],
-      }, context);
+      });
     }
 
-    const history = await getBlob(`history_${profileId}`, context);
+    const history = await getBlob(`history_${profileId}`);
     if (!history) {
       await setBlob(`history_${profileId}`, {
         profileId,
         watches: [],
-      }, context);
+      });
     }
   }
 }
