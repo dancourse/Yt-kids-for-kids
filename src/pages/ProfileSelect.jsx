@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileCard from '../components/kids/ProfileCard';
-import { PROFILE_IDS } from '../lib/constants';
+import { PROFILE_IDS, APP_VERSION } from '../lib/constants';
 
 export default function ProfileSelect() {
   const [profiles, setProfiles] = useState([]);
@@ -46,6 +46,10 @@ export default function ProfileSelect() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-purple-100 to-pink-100 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+      {/* Version indicator */}
+      <div className="absolute top-2 right-2 text-xs text-gray-400 bg-white/50 px-2 py-1 rounded z-50">
+        v{APP_VERSION}
+      </div>
       {/* Decorative animated shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-20 w-32 h-32 bg-primary rounded-full opacity-20 animate-bounce-gentle" />

@@ -3,44 +3,44 @@ import { getBlob, setBlob, initializeData } from './utils/storage.js';
 import { requireParentAuth, requireAuth } from './utils/auth.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
+export default async (req, context) => {
+  if (req.method === 'OPTIONS') {
     return handleOptions();
   }
 
   try {
     // Ensure data is initialized
-    await initializeData();
+    await initializeData(context);
 
     // Extract profileId from path
-    const pathParts = event.path.split('/').filter(Boolean);
+    const pathParts = new URL(req.url).pathname.split('/').filter(Boolean);
     const profileId = pathParts[pathParts.length - 2];
 
-    if (event.httpMethod === 'GET') {
+    if (req.method === 'GET') {
       // Require parent authentication to view history
-      requireParentAuth(event);
+      requireParentAuth(req);
 
-      const history = await getBlob(`history_${profileId}`);
+      const history = await getBlob(`history_${profileId}`, context);
       return successResponse({ watches: history.watches || [] });
     }
 
-    if (event.httpMethod === 'POST') {
+    if (req.method === 'POST') {
       // Kids can record their watch history
-      const payload = requireAuth(event);
+      const payload = requireAuth(req);
 
       // If kid auth, verify it's their profile
       if (payload.role === 'kid' && payload.profileId !== profileId) {
         return errorResponse({ message: 'Unauthorized access to this profile' }, 403);
       }
 
-      const { videoId, watchDuration, title } = JSON.parse(event.body);
+      const { videoId, watchDuration, title } = await req.json();
 
       if (!videoId) {
         return errorResponse({ message: 'Video ID is required' }, 400);
       }
 
       // Get current history
-      const history = await getBlob(`history_${profileId}`);
+      const history = await getBlob(`history_${profileId}`, context);
 
       // Add watch record
       history.watches.push({
@@ -55,7 +55,7 @@ export async function handler(event) {
         history.watches = history.watches.slice(-100);
       }
 
-      await setBlob(`history_${profileId}`, history);
+      await setBlob(`history_${profileId}`, history, context);
 
       return successResponse({ success: true });
     }
@@ -64,4 +64,4 @@ export async function handler(event) {
   } catch (error) {
     return errorResponse(error, error.message === 'Authentication required' ? 401 : 500);
   }
-}
+};

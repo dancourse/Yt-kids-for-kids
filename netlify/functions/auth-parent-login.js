@@ -3,27 +3,27 @@ import { getBlob, initializeData } from './utils/storage.js';
 import { verifyPassword, generateToken } from './utils/auth.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
+export default async (req, context) => {
+  if (req.method === 'OPTIONS') {
     return handleOptions();
   }
 
-  if (event.httpMethod !== 'POST') {
+  if (req.method !== 'POST') {
     return errorResponse({ message: 'Method not allowed' }, 405);
   }
 
   try {
     // Ensure data is initialized
-    await initializeData();
+    await initializeData(context);
 
-    const { password } = JSON.parse(event.body);
+    const { password } = await req.json();
 
     if (!password) {
       return errorResponse({ message: 'Password is required' }, 400);
     }
 
     // Get config with parent password hash
-    const config = await getBlob('config');
+    const config = await getBlob('config', context);
     if (!config || !config.parentPasswordHash) {
       return errorResponse({ message: 'System not configured. Please set PARENT_PASSWORD_HASH environment variable.' }, 500);
     }
@@ -44,4 +44,4 @@ export async function handler(event) {
   } catch (error) {
     return errorResponse(error, 500);
   }
-}
+};
