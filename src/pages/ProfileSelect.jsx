@@ -16,7 +16,7 @@ export default function ProfileSelect() {
     try {
       // Load both profiles' public info
       const profilePromises = PROFILE_IDS.map(async (id) => {
-        const response = await fetch(`/api/profiles/${id}/public`);
+        const response = await fetch(`/api/profiles-${id}-public`);
         if (response.ok) {
           return response.json();
         }
