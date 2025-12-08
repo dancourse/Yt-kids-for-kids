@@ -3,26 +3,26 @@ import { getBlob, setBlob, initializeData } from './utils/storage.js';
 import { requireParentAuth, hashPassword } from './utils/auth.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export async function handler(event, context) {
-  if (event.httpMethod === 'OPTIONS') {
+export default async (req, context) => {
+  if (req.method === 'OPTIONS') {
     return handleOptions();
   }
 
   try {
     // Ensure data is initialized
-    await initializeData();
+    await initializeData(context);
 
     // Extract profileId from path
-    const profileId = event.path.split('/').filter(Boolean).pop();
+    const profileId = new URL(req.url).pathname.split('/').filter(Boolean).pop();
 
-    if (event.httpMethod === 'PUT') {
+    if (req.method === 'PUT') {
       // Require parent authentication
-      requireParentAuth(event);
+      requireParentAuth(req);
 
-      const { avatarId, sillyName, pin } = JSON.parse(event.body);
+      const { avatarId, sillyName, pin } = await req.json();
 
       // Get current profiles
-      const profilesData = await getBlob('profiles');
+      const profilesData = await getBlob('profiles', context);
       const profileIndex = profilesData.profiles.findIndex(p => p.id === profileId);
 
       if (profileIndex === -1) {
@@ -35,7 +35,7 @@ export async function handler(event, context) {
       if (pin) profilesData.profiles[profileIndex].pinHash = hashPassword(pin);
 
       // Save updated profiles
-      await setBlob('profiles', profilesData);
+      await setBlob('profiles', profilesData, context);
 
       return successResponse({
         success: true,
@@ -47,4 +47,4 @@ export async function handler(event, context) {
   } catch (error) {
     return errorResponse(error, error.message === 'Authentication required' ? 401 : 500);
   }
-}
+};

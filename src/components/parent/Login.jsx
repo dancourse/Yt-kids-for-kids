@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../../lib/api';
 import { auth } from '../../lib/auth';
+import { APP_VERSION } from '../../lib/constants';
 
 export default function Login({ onLogin }) {
   const [password, setPassword] = useState('');
@@ -24,7 +25,10 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 relative">
+      <div className="absolute top-2 right-2 text-xs text-gray-400 bg-white px-2 py-1 rounded">
+        v{APP_VERSION}
+      </div>
       <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">KiddoTube</h1>
         <p className="text-gray-600 mb-6">Parent Dashboard</p>

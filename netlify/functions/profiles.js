@@ -3,20 +3,20 @@ import { getBlob, setBlob, initializeData } from './utils/storage.js';
 import { requireParentAuth, hashPassword } from './utils/auth.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
+export default async (req, context) => {
+  if (req.method === 'OPTIONS') {
     return handleOptions();
   }
 
   try {
     // Ensure data is initialized
-    await initializeData();
+    await initializeData(context);
 
-    if (event.httpMethod === 'GET') {
+    if (req.method === 'GET') {
       // Require parent authentication
-      requireParentAuth(event);
+      requireParentAuth(req);
 
-      const profilesData = await getBlob('profiles');
+      const profilesData = await getBlob('profiles', context);
       return successResponse({ profiles: profilesData.profiles });
     }
 
@@ -24,4 +24,4 @@ export async function handler(event) {
   } catch (error) {
     return errorResponse(error, error.message === 'Authentication required' ? 401 : 500);
   }
-}
+};
