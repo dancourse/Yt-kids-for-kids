@@ -31,14 +31,14 @@ async function request(endpoint, options = {}) {
 export const api = {
   // Authentication
   parentLogin(password) {
-    return request('/auth/parent-login', {
+    return request('/auth-parent-login', {
       method: 'POST',
       body: { password },
     });
   },
 
   kidLogin(profileId, pin) {
-    return request('/auth/kid-login', {
+    return request('/auth-kid-login', {
       method: 'POST',
       body: { profileId, pin },
     });
@@ -50,11 +50,11 @@ export const api = {
   },
 
   getPublicProfile(profileId) {
-    return request(`/profiles/${profileId}/public`);
+    return request(`/profiles-${profileId}-public`);
   },
 
   updateProfile(profileId, data) {
-    return request(`/profiles/${profileId}`, {
+    return request(`/profiles-${profileId}`, {
       method: 'PUT',
       body: data,
     });
@@ -62,60 +62,60 @@ export const api = {
 
   // Creators
   getCreators(profileId) {
-    return request(`/profiles/${profileId}/creators`);
+    return request(`/profiles-${profileId}-creators`);
   },
 
   addCreator(profileId, channelUrl) {
-    return request(`/profiles/${profileId}/creators`, {
+    return request(`/profiles-${profileId}-creators`, {
       method: 'POST',
       body: { channelUrl },
     });
   },
 
   removeCreator(profileId, channelId) {
-    return request(`/profiles/${profileId}/creators/${channelId}`, {
+    return request(`/profiles-${profileId}-creators-${channelId}`, {
       method: 'DELETE',
     });
   },
 
   // Videos
   getVideos(profileId) {
-    return request(`/profiles/${profileId}/videos`);
+    return request(`/profiles-${profileId}-videos`);
   },
 
   addVideo(profileId, videoUrl) {
-    return request(`/profiles/${profileId}/videos`, {
+    return request(`/profiles-${profileId}-videos`, {
       method: 'POST',
       body: { videoUrl },
     });
   },
 
   removeVideo(profileId, videoId) {
-    return request(`/profiles/${profileId}/videos/${videoId}`, {
+    return request(`/profiles-${profileId}-videos-${videoId}`, {
       method: 'DELETE',
     });
   },
 
   blockVideo(profileId, videoId, reason) {
-    return request(`/profiles/${profileId}/videos/${videoId}/block`, {
+    return request(`/profiles-${profileId}-videos-${videoId}-block`, {
       method: 'POST',
       body: { reason },
     });
   },
 
   unblockVideo(profileId, videoId) {
-    return request(`/profiles/${profileId}/blocked/${videoId}`, {
+    return request(`/profiles-${profileId}-blocked-${videoId}`, {
       method: 'DELETE',
     });
   },
 
   // Watch History
   getHistory(profileId) {
-    return request(`/profiles/${profileId}/history`);
+    return request(`/profiles-${profileId}-history`);
   },
 
   recordWatch(profileId, videoId, watchDuration) {
-    return request(`/profiles/${profileId}/history`, {
+    return request(`/profiles-${profileId}-history`, {
       method: 'POST',
       body: { videoId, watchDuration },
     });
@@ -123,10 +123,10 @@ export const api = {
 
   // YouTube helpers
   getChannelVideos(channelId) {
-    return request(`/youtube/channel-videos/${channelId}`);
+    return request(`/youtube-channel-videos-${channelId}`);
   },
 
   getVideoInfo(videoId) {
-    return request(`/youtube/video-info/${videoId}`);
+    return request(`/youtube-video-info-${videoId}`);
   },
 };

@@ -30,7 +30,7 @@ export default function WatchPage() {
 
   const loadProfile = async () => {
     try {
-      const response = await fetch(`/api/profiles/${profileId}/public`);
+      const response = await fetch(`/api/profiles-${profileId}-public`);
       if (response.ok) {
         const data = await response.json();
         setProfile(data);
