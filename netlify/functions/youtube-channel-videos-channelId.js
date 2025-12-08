@@ -3,21 +3,21 @@ import { requireParentAuth } from './utils/auth.js';
 import { getChannelVideos } from './utils/youtube.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
+export default async (req, context) => {
+  if (req.method === 'OPTIONS') {
     return handleOptions();
   }
 
-  if (event.httpMethod !== 'GET') {
+  if (req.method !== 'GET') {
     return errorResponse({ message: 'Method not allowed' }, 405);
   }
 
   try {
     // Require parent authentication
-    requireParentAuth(event);
+    requireParentAuth(req);
 
     // Extract channelId from path
-    const pathParts = event.path.split('/').filter(Boolean);
+    const pathParts = new URL(req.url).pathname.split('/').filter(Boolean);
     const channelId = pathParts[pathParts.length - 1];
 
     // Get videos from YouTube
@@ -27,4 +27,4 @@ export async function handler(event) {
   } catch (error) {
     return errorResponse(error, error.message === 'Authentication required' ? 401 : 500);
   }
-}
+};
