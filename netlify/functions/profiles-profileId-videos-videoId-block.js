@@ -24,7 +24,8 @@ export async function handler(event) {
     const videoId = pathParts[pathParts.length - 2];
     const profileId = pathParts[pathParts.length - 4];
 
-    const { reason } = JSON.parse(event.body || '{}');
+    const body = event.body ? JSON.parse(event.body) : {};
+    const { reason } = body;
 
     // Get current approvals
     const approvals = await getBlob(`approvals_${profileId}`);

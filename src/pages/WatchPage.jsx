@@ -112,6 +112,7 @@ export default function WatchPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-purple-50 to-pink-50">
       <header className="bg-white shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="text-xs text-gray-400 absolute top-1 right-2">v{APP_VERSION}</div>
           <div className="flex items-center space-x-4">
             <div className="text-4xl">{getAvatarEmoji(profile.avatarId)}</div>
             <div>

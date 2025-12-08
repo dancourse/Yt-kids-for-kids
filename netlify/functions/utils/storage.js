@@ -2,12 +2,9 @@
 import { getStore } from '@netlify/blobs';
 
 // Get a blob store instance
+// In production on Netlify, getStore() auto-detects context
 export function getBlobStore() {
-  return getStore({
-    name: 'kiddotube',
-    siteID: process.env.SITE_ID,
-    token: process.env.NETLIFY_BLOBS_TOKEN,
-  });
+  return getStore('kiddotube');
 }
 
 // Get data from blob storage

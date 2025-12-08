@@ -3,7 +3,7 @@ import { getBlob, setBlob, initializeData } from './utils/storage.js';
 import { requireParentAuth, hashPassword } from './utils/auth.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export async function handler(event, context) {
+export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') {
     return handleOptions();
   }
