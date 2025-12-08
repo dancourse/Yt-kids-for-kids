@@ -2,24 +2,24 @@
 import { getBlob, initializeData } from './utils/storage.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export default async (req, context) => {
-  if (req.method === 'OPTIONS') {
+export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') {
     return handleOptions();
   }
 
-  if (req.method !== 'GET') {
+  if (event.httpMethod !== 'GET') {
     return errorResponse({ message: 'Method not allowed' }, 405);
   }
 
   try {
     // Ensure data is initialized
-    await initializeData(context);
+    await initializeData();
 
     // Extract profileId from path
-    const pathParts = new URL(req.url).pathname.split('/').filter(Boolean);
+    const pathParts = event.path.split('/').filter(Boolean);
     const profileId = pathParts[pathParts.length - 2]; // Second to last part
 
-    const profilesData = await getBlob('profiles', context);
+    const profilesData = await getBlob('profiles');
     const profile = profilesData.profiles.find(p => p.id === profileId);
 
     if (!profile) {
@@ -35,4 +35,4 @@ export default async (req, context) => {
   } catch (error) {
     return errorResponse(error, 500);
   }
-};
+}

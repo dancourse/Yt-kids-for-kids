@@ -3,21 +3,21 @@ import { requireParentAuth } from './utils/auth.js';
 import { getVideoInfo } from './utils/youtube.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export default async (req, context) => {
-  if (req.method === 'OPTIONS') {
+export async function handler(event) {
+  if (event.httpMethod === 'OPTIONS') {
     return handleOptions();
   }
 
-  if (req.method !== 'GET') {
+  if (event.httpMethod !== 'GET') {
     return errorResponse({ message: 'Method not allowed' }, 405);
   }
 
   try {
     // Require parent authentication
-    requireParentAuth(req);
+    requireParentAuth(event);
 
     // Extract videoId from path
-    const pathParts = new URL(req.url).pathname.split('/').filter(Boolean);
+    const pathParts = event.path.split('/').filter(Boolean);
     const videoId = pathParts[pathParts.length - 1];
 
     // Get video info from YouTube
@@ -27,4 +27,4 @@ export default async (req, context) => {
   } catch (error) {
     return errorResponse(error, error.message === 'Authentication required' ? 401 : 500);
   }
-};
+}

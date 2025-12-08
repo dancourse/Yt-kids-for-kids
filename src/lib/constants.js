@@ -1,5 +1,5 @@
 // App version - increment on every deploy
-export const APP_VERSION = "1.0.3";
+export const APP_VERSION = "1.0.4";
 
 // Available avatars for kid profiles
 export const AVATARS = [

@@ -29,8 +29,8 @@ export function verifyToken(token) {
 }
 
 // Extract token from request headers
-export function extractToken(req) {
-  const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+export function extractToken(event) {
+  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
   if (!authHeader) return null;
 
   const parts = authHeader.split(' ');
@@ -40,8 +40,8 @@ export function extractToken(req) {
 }
 
 // Middleware to require authentication
-export function requireAuth(req, requiredRole = null) {
-  const token = extractToken(req);
+export function requireAuth(event, requiredRole = null) {
+  const token = extractToken(event);
   if (!token) {
     throw new Error('Authentication required');
   }
@@ -59,13 +59,13 @@ export function requireAuth(req, requiredRole = null) {
 }
 
 // Middleware to require parent authentication
-export function requireParentAuth(req) {
-  return requireAuth(req, 'parent');
+export function requireParentAuth(event) {
+  return requireAuth(event, 'parent');
 }
 
 // Middleware to require kid authentication for specific profile
-export function requireKidAuth(req, profileId) {
-  const payload = requireAuth(req, 'kid');
+export function requireKidAuth(event, profileId) {
+  const payload = requireAuth(event, 'kid');
   if (payload.profileId !== profileId) {
     throw new Error('Unauthorized access to this profile');
   }
