@@ -1,3 +1,6 @@
+// App version - increment on every deploy
+export const APP_VERSION = "1.1.0";
+
 // Available avatars for kid profiles
 export const AVATARS = [
   { id: "rocket", name: "Rocket", emoji: "🚀" },
@@ -26,3 +29,19 @@ export const SILLY_NAMES = [
 
 // Default profile IDs
 export const PROFILE_IDS = ["profile_1", "profile_2"];
+
+// Default profiles with pre-configured settings
+export const DEFAULT_PROFILES = [
+  {
+    id: "profile_1",
+    avatarId: "rocket",
+    sillyName: "Captain Bubbles",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "profile_2",
+    avatarId: "dinosaur",
+    sillyName: "Professor Giggles",
+    createdAt: new Date().toISOString(),
+  },
+];

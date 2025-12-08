@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
-import { auth } from '../lib/auth';
-import PinEntry from '../components/kids/PinEntry';
+import { APP_VERSION } from '../lib/constants';
+import { getProfile, getApprovals, recordWatch } from '../lib/storage';
 import VideoCard from '../components/kids/VideoCard';
 import VideoPlayer from '../components/kids/VideoPlayer';
 
@@ -11,7 +10,6 @@ export default function WatchPage() {
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [videos, setVideos] = useState([]);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,21 +17,14 @@ export default function WatchPage() {
 
   useEffect(() => {
     loadProfile();
-    checkAuth();
+    loadVideos();
   }, [profileId]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadVideos();
-    }
-  }, [isAuthenticated]);
-
-  const loadProfile = async () => {
+  const loadProfile = () => {
     try {
-      const response = await fetch(`/api/profiles-${profileId}-public`);
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data);
+      const profileData = getProfile(profileId);
+      if (profileData) {
+        setProfile(profileData);
       } else {
         setError('Profile not found');
       }
@@ -42,29 +33,20 @@ export default function WatchPage() {
     }
   };
 
-  const checkAuth = () => {
-    const currentProfile = auth.getProfile();
-    if (currentProfile && currentProfile.id === profileId) {
-      setIsAuthenticated(true);
-    }
-  };
-
-  const handlePinSuccess = async (pin) => {
-    try {
-      const response = await api.kidLogin(profileId, pin);
-      auth.saveToken(response.token);
-      auth.saveProfile(response.profile);
-      setIsAuthenticated(true);
-    } catch (err) {
-      throw err;
-    }
-  };
-
-  const loadVideos = async () => {
+  const loadVideos = () => {
     setLoading(true);
     try {
-      const response = await api.getVideos(profileId);
-      setVideos(response.videos);
+      const approvals = getApprovals(profileId);
+
+      // Get approved videos (for now just show individually approved videos)
+      // TODO: Later we can fetch videos from approved creators via YouTube API
+      const approvedVideos = approvals.approvedVideos || [];
+      const blockedVideoIds = new Set((approvals.blockedVideos || []).map(v => v.videoId));
+
+      // Filter out blocked videos
+      const filteredVideos = approvedVideos.filter(v => !blockedVideoIds.has(v.videoId));
+
+      setVideos(filteredVideos);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -80,16 +62,15 @@ export default function WatchPage() {
     setSelectedVideo(null);
   };
 
-  const handleWatchComplete = async (videoId, watchDuration, title) => {
+  const handleWatchComplete = (videoId, watchDuration, title) => {
     try {
-      await api.recordWatch(profileId, videoId, watchDuration);
+      recordWatch(profileId, videoId, watchDuration, title);
     } catch (err) {
       console.error('Failed to record watch history:', err);
     }
   };
 
   const handleSwitchProfile = () => {
-    auth.clearToken();
     navigate('/');
   };
 
@@ -114,16 +95,6 @@ export default function WatchPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-2xl font-bold text-primary">Loading...</p>
       </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <PinEntry
-        profile={profile}
-        onSuccess={handlePinSuccess}
-        onBack={() => navigate('/')}
-      />
     );
   }
 
@@ -165,7 +136,13 @@ export default function WatchPage() {
         ) : videos.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-3xl font-bold text-gray-700 mb-4">No videos yet!</p>
-            <p className="text-xl text-gray-600">Ask a parent to add some videos for you.</p>
+            <p className="text-xl text-gray-600 mb-6">Ask a parent to add some videos for you.</p>
+            <button
+              onClick={() => navigate('/parent')}
+              className="px-6 py-3 bg-primary text-white rounded-full font-bold hover:bg-purple-600 transition"
+            >
+              Go to Parent Dashboard
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
