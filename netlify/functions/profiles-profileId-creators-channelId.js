@@ -3,39 +3,39 @@ import { getBlob, setBlob, initializeData } from './utils/storage.js';
 import { requireParentAuth } from './utils/auth.js';
 import { successResponse, errorResponse, handleOptions } from './utils/response.js';
 
-export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
+export default async (req, context) => {
+  if (req.method === 'OPTIONS') {
     return handleOptions();
   }
 
-  if (event.httpMethod !== 'DELETE') {
+  if (req.method !== 'DELETE') {
     return errorResponse({ message: 'Method not allowed' }, 405);
   }
 
   try {
     // Ensure data is initialized
-    await initializeData();
+    await initializeData(context);
 
     // Require parent authentication
-    requireParentAuth(event);
+    requireParentAuth(req);
 
     // Extract profileId and channelId from path
-    const pathParts = event.path.split('/').filter(Boolean);
+    const pathParts = new URL(req.url).pathname.split('/').filter(Boolean);
     const channelId = pathParts[pathParts.length - 1];
     const profileId = pathParts[pathParts.length - 3];
 
     // Get current approvals
-    const approvals = await getBlob(`approvals_${profileId}`);
+    const approvals = await getBlob(`approvals_${profileId}`, context);
 
     // Remove creator
     approvals.approvedCreators = approvals.approvedCreators.filter(
       c => c.channelId !== channelId
     );
 
-    await setBlob(`approvals_${profileId}`, approvals);
+    await setBlob(`approvals_${profileId}`, approvals, context);
 
     return successResponse({ success: true });
   } catch (error) {
     return errorResponse(error, error.message === 'Authentication required' ? 401 : 500);
   }
-}
+};
