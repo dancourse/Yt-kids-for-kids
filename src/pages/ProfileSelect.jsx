@@ -17,10 +17,11 @@ export default function ProfileSelect() {
   const loadProfiles = async () => {
     try {
       const data = await api.getProfiles();
-      setProfiles(data.profiles);
+      setProfiles(data?.profiles || []); // Safe fallback to empty array
     } catch (err) {
       console.error('Failed to load profiles:', err);
-      setError(err.message);
+      setError(err.message || 'Failed to load profiles');
+      setProfiles([]); // Ensure profiles is always an array
     } finally {
       setLoading(false);
     }
@@ -35,6 +36,24 @@ export default function ProfileSelect() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-purple-100 to-pink-100 flex items-center justify-center">
         <div className="text-4xl font-bold text-primary">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-purple-100 to-pink-100 flex items-center justify-center">
+        <div className="text-center p-8">
+          <div className="text-6xl mb-4">😢</div>
+          <div className="text-2xl font-bold text-red-600 mb-4">Oops! Something went wrong</div>
+          <div className="text-gray-700 mb-6">{error}</div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-primary text-white rounded-full font-bold hover:bg-purple-600 transition"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }

@@ -29,7 +29,8 @@ export default function WatchPage() {
         setError('Profile not found');
       }
     } catch (err) {
-      setError('Failed to load profile');
+      console.error('Failed to load profile:', err);
+      setError(err.message || 'Failed to load profile');
     }
   };
 
@@ -39,15 +40,17 @@ export default function WatchPage() {
       const data = await api.getVideos(profileId);
 
       // Get approved videos and filter out blocked ones
-      const approvedVideos = data.approvedVideos || [];
-      const blockedVideoIds = new Set((data.blockedVideos || []).map(v => v.videoId));
+      const approvedVideos = data?.approvedVideos || [];
+      const blockedVideoIds = new Set((data?.blockedVideos || []).map(v => v.videoId));
 
       // Filter out blocked videos
       const filteredVideos = approvedVideos.filter(v => !blockedVideoIds.has(v.videoId));
 
       setVideos(filteredVideos);
     } catch (err) {
-      setError(err.message);
+      console.error('Failed to load videos:', err);
+      setError(err.message || 'Failed to load videos');
+      setVideos([]); // Ensure videos is always an array
     } finally {
       setLoading(false);
     }
