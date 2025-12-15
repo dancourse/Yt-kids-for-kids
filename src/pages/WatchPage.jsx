@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { APP_VERSION } from '../lib/constants';
-import { getProfile, getApprovals, recordWatch } from '../lib/storage';
+import { api } from '../lib/api';
 import VideoCard from '../components/kids/VideoCard';
 import VideoPlayer from '../components/kids/VideoPlayer';
 
@@ -20,9 +20,9 @@ export default function WatchPage() {
     loadVideos();
   }, [profileId]);
 
-  const loadProfile = () => {
+  const loadProfile = async () => {
     try {
-      const profileData = getProfile(profileId);
+      const profileData = await api.getProfile(profileId);
       if (profileData) {
         setProfile(profileData);
       } else {
@@ -33,15 +33,14 @@ export default function WatchPage() {
     }
   };
 
-  const loadVideos = () => {
+  const loadVideos = async () => {
     setLoading(true);
     try {
-      const approvals = getApprovals(profileId);
+      const data = await api.getVideos(profileId);
 
-      // Get approved videos (for now just show individually approved videos)
-      // TODO: Later we can fetch videos from approved creators via YouTube API
-      const approvedVideos = approvals.approvedVideos || [];
-      const blockedVideoIds = new Set((approvals.blockedVideos || []).map(v => v.videoId));
+      // Get approved videos and filter out blocked ones
+      const approvedVideos = data.approvedVideos || [];
+      const blockedVideoIds = new Set((data.blockedVideos || []).map(v => v.videoId));
 
       // Filter out blocked videos
       const filteredVideos = approvedVideos.filter(v => !blockedVideoIds.has(v.videoId));
@@ -62,9 +61,9 @@ export default function WatchPage() {
     setSelectedVideo(null);
   };
 
-  const handleWatchComplete = (videoId, watchDuration, title) => {
+  const handleWatchComplete = async (videoId, watchDuration, title) => {
     try {
-      recordWatch(profileId, videoId, watchDuration, title);
+      await api.recordWatch(profileId, videoId, title, watchDuration);
     } catch (err) {
       console.error('Failed to record watch history:', err);
     }

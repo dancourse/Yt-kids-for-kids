@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getProfiles, initializeStorage } from '../../lib/storage';
+import { api } from '../../lib/api';
 import { APP_VERSION } from '../../lib/constants';
 import ProfileManager from './ProfileManager';
 
@@ -13,11 +13,10 @@ export default function Dashboard() {
     loadProfiles();
   }, []);
 
-  const loadProfiles = () => {
+  const loadProfiles = async () => {
     try {
-      initializeStorage();
-      const loadedProfiles = getProfiles();
-      setProfiles(loadedProfiles);
+      const data = await api.getProfiles();
+      setProfiles(data.profiles);
     } catch (err) {
       setError(err.message);
     } finally {

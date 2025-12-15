@@ -1,5 +1,4 @@
 // API client for making requests to Netlify functions
-import { auth } from './auth';
 
 const API_BASE = '/api';
 
@@ -9,7 +8,6 @@ async function request(endpoint, options = {}) {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...auth.getAuthHeaders(),
       ...options.headers,
     },
   };
@@ -29,104 +27,76 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  // Authentication
-  parentLogin(password) {
-    return request('/auth-parent-login', {
-      method: 'POST',
-      body: { password },
-    });
-  },
-
-  kidLogin(profileId, pin) {
-    return request('/auth-kid-login', {
-      method: 'POST',
-      body: { profileId, pin },
-    });
-  },
-
   // Profiles
   getProfiles() {
     return request('/profiles');
   },
 
-  getPublicProfile(profileId) {
-    return request(`/profiles-${profileId}-public`);
-  },
-
-  updateProfile(profileId, data) {
-    return request(`/profiles-${profileId}`, {
-      method: 'PUT',
-      body: data,
-    });
+  getProfile(profileId) {
+    return request(`/profile-detail?id=${profileId}`);
   },
 
   // Creators
   getCreators(profileId) {
-    return request(`/profiles-${profileId}-creators`);
+    return request(`/profile-creators?profileId=${profileId}`);
   },
 
-  addCreator(profileId, channelUrl) {
-    return request(`/profiles-${profileId}-creators`, {
+  addCreator(profileId, creator) {
+    return request(`/profile-creators?profileId=${profileId}`, {
       method: 'POST',
-      body: { channelUrl },
+      body: creator,
     });
   },
 
   removeCreator(profileId, channelId) {
-    return request(`/profiles-${profileId}-creators-${channelId}`, {
+    return request(`/profile-creators?profileId=${profileId}`, {
       method: 'DELETE',
+      body: { channelId },
     });
   },
 
   // Videos
   getVideos(profileId) {
-    return request(`/profiles-${profileId}-videos`);
+    return request(`/profile-videos?profileId=${profileId}`);
   },
 
-  addVideo(profileId, videoUrl) {
-    return request(`/profiles-${profileId}-videos`, {
+  addVideo(profileId, video) {
+    return request(`/profile-videos?profileId=${profileId}`, {
       method: 'POST',
-      body: { videoUrl },
+      body: video,
     });
   },
 
   removeVideo(profileId, videoId) {
-    return request(`/profiles-${profileId}-videos-${videoId}`, {
+    return request(`/profile-videos?profileId=${profileId}`, {
       method: 'DELETE',
+      body: { videoId },
     });
   },
 
   blockVideo(profileId, videoId, reason) {
-    return request(`/profiles-${profileId}-videos-${videoId}-block`, {
+    return request(`/profile-videos?profileId=${profileId}`, {
       method: 'POST',
-      body: { reason },
+      body: { action: 'block', videoId, reason },
     });
   },
 
   unblockVideo(profileId, videoId) {
-    return request(`/profiles-${profileId}-blocked-${videoId}`, {
+    return request(`/profile-videos?profileId=${profileId}`, {
       method: 'DELETE',
+      body: { action: 'unblock', videoId },
     });
   },
 
   // Watch History
-  getHistory(profileId) {
-    return request(`/profiles-${profileId}-history`);
+  getHistory(profileId, limit = 50) {
+    return request(`/profile-history?profileId=${profileId}&limit=${limit}`);
   },
 
-  recordWatch(profileId, videoId, watchDuration) {
-    return request(`/profiles-${profileId}-history`, {
+  recordWatch(profileId, videoId, videoTitle, watchDuration) {
+    return request(`/profile-history?profileId=${profileId}`, {
       method: 'POST',
-      body: { videoId, watchDuration },
+      body: { videoId, videoTitle, watchDuration },
     });
-  },
-
-  // YouTube helpers
-  getChannelVideos(channelId) {
-    return request(`/youtube-channel-videos-${channelId}`);
-  },
-
-  getVideoInfo(videoId) {
-    return request(`/youtube-video-info-${videoId}`);
   },
 };
