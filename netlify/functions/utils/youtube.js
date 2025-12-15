@@ -1,30 +1,13 @@
-// YouTube API utilities
+// YouTube API helpers
+
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 
-// Helper to make YouTube API requests
-async function youtubeRequest(endpoint, params = {}) {
-  const url = new URL(`${YOUTUBE_API_BASE}/${endpoint}`);
-  url.searchParams.append('key', YOUTUBE_API_KEY);
-
-  Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.append(key, value);
-  });
-
-  const response = await fetch(url.toString());
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'YouTube API request failed');
-  }
-
-  return response.json();
-}
-
-// Extract video ID from various YouTube URL formats
+// Extract YouTube video ID from various URL formats
 export function extractVideoId(url) {
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /^([a-zA-Z0-9_-]{11})$/, // Direct video ID
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
   ];
 
   for (const pattern of patterns) {
@@ -32,88 +15,56 @@ export function extractVideoId(url) {
     if (match) return match[1];
   }
 
-  return null;
-}
-
-// Extract channel ID from YouTube URL
-export function extractChannelId(url) {
-  const patterns = [
-    /youtube\.com\/channel\/([^\/\n?#]+)/,
-    /^(UC[a-zA-Z0-9_-]{22})$/, // Direct channel ID
-  ];
-
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+  // If it's already just an ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
+    return url;
   }
 
   return null;
 }
 
-// Extract channel handle from URL
-export function extractChannelHandle(url) {
-  const match = url.match(/youtube\.com\/@([^\/\n?#]+)/);
-  return match ? match[1] : null;
-}
-
-// Get channel info by channel ID
-export async function getChannelById(channelId) {
-  const data = await youtubeRequest('channels', {
-    part: 'snippet,contentDetails',
-    id: channelId,
-  });
-
-  if (!data.items || data.items.length === 0) {
-    throw new Error('Channel not found');
+// Extract YouTube channel ID or handle from URL
+export function extractChannelInfo(url) {
+  // Handle format: @username
+  const handleMatch = url.match(/youtube\.com\/@([a-zA-Z0-9_-]+)/);
+  if (handleMatch) {
+    return { type: 'handle', value: handleMatch[1] };
   }
 
-  const channel = data.items[0];
-  return {
-    channelId: channel.id,
-    channelName: channel.snippet.title,
-    channelThumbnail: channel.snippet.thumbnails.default.url,
-    uploadsPlaylistId: channel.contentDetails.relatedPlaylists.uploads,
-  };
-}
-
-// Get channel info by handle (@username)
-export async function getChannelByHandle(handle) {
-  const data = await youtubeRequest('search', {
-    part: 'snippet',
-    q: handle,
-    type: 'channel',
-    maxResults: 1,
-  });
-
-  if (!data.items || data.items.length === 0) {
-    throw new Error('Channel not found');
+  // Channel ID format
+  const channelMatch = url.match(/youtube\.com\/channel\/([a-zA-Z0-9_-]+)/);
+  if (channelMatch) {
+    return { type: 'channelId', value: channelMatch[1] };
   }
 
-  const channelId = data.items[0].snippet.channelId;
-  return getChannelById(channelId);
-}
-
-// Get channel info from URL
-export async function getChannelFromUrl(url) {
-  const channelId = extractChannelId(url);
-  if (channelId) {
-    return getChannelById(channelId);
+  // User format (old style)
+  const userMatch = url.match(/youtube\.com\/user\/([a-zA-Z0-9_-]+)/);
+  if (userMatch) {
+    return { type: 'user', value: userMatch[1] };
   }
 
-  const handle = extractChannelHandle(url);
-  if (handle) {
-    return getChannelByHandle(handle);
+  // If it looks like a channel ID
+  if (/^UC[a-zA-Z0-9_-]{22}$/.test(url)) {
+    return { type: 'channelId', value: url };
   }
 
-  throw new Error('Invalid YouTube channel URL');
+  return null;
 }
 
-// Get video info by video ID
+// Fetch video metadata from YouTube API
 export async function getVideoInfo(videoId) {
-  const data = await youtubeRequest('videos', {
-    part: 'snippet,contentDetails',
-    id: videoId,
-  });
+  if (!YOUTUBE_API_KEY) {
+    throw new Error('YouTube API key not configured');
+  }
+
+  const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet&key=${YOUTUBE_API_KEY}`;
+  
+  const response = await fetch(url);
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(data.error.message || 'YouTube API error');
+  }
 
   if (!data.items || data.items.length === 0) {
     throw new Error('Video not found');
@@ -122,50 +73,45 @@ export async function getVideoInfo(videoId) {
   const video = data.items[0];
   return {
     videoId: video.id,
-    title: video.snippet.title,
-    thumbnail: video.snippet.thumbnails.medium.url,
-    channelName: video.snippet.channelTitle,
+    videoTitle: video.snippet.title,
+    videoThumbnail: video.snippet.thumbnails.high?.url || video.snippet.thumbnails.default.url,
+    videoDescription: video.snippet.description,
+    channelTitle: video.snippet.channelTitle,
     channelId: video.snippet.channelId,
-    duration: video.contentDetails.duration,
-    publishedAt: video.snippet.publishedAt,
   };
 }
 
-// Get video info from URL
-export async function getVideoFromUrl(url) {
-  const videoId = extractVideoId(url);
-  if (!videoId) {
-    throw new Error('Invalid YouTube video URL');
+// Fetch channel metadata from YouTube API
+export async function getChannelInfo(channelInfo) {
+  if (!YOUTUBE_API_KEY) {
+    throw new Error('YouTube API key not configured');
   }
 
-  return getVideoInfo(videoId);
-}
+  let url;
+  if (channelInfo.type === 'channelId') {
+    url = `https://www.googleapis.com/youtube/v3/channels?id=${channelInfo.value}&part=snippet&key=${YOUTUBE_API_KEY}`;
+  } else if (channelInfo.type === 'handle') {
+    url = `https://www.googleapis.com/youtube/v3/channels?forHandle=${channelInfo.value}&part=snippet&key=${YOUTUBE_API_KEY}`;
+  } else if (channelInfo.type === 'user') {
+    url = `https://www.googleapis.com/youtube/v3/channels?forUsername=${channelInfo.value}&part=snippet&key=${YOUTUBE_API_KEY}`;
+  }
 
-// Get recent videos from a channel
-export async function getChannelVideos(channelId, maxResults = 50) {
-  const channelInfo = await getChannelById(channelId);
-  const uploadsPlaylistId = channelInfo.uploadsPlaylistId;
+  const response = await fetch(url);
+  const data = await response.json();
 
-  const data = await youtubeRequest('playlistItems', {
-    part: 'snippet',
-    playlistId: uploadsPlaylistId,
-    maxResults,
-  });
+  if (data.error) {
+    throw new Error(data.error.message || 'YouTube API error');
+  }
 
-  const videoIds = data.items.map(item => item.snippet.resourceId.videoId);
+  if (!data.items || data.items.length === 0) {
+    throw new Error('Channel not found');
+  }
 
-  // Get detailed info for all videos
-  const videosData = await youtubeRequest('videos', {
-    part: 'snippet,contentDetails',
-    id: videoIds.join(','),
-  });
-
-  return videosData.items.map(video => ({
-    videoId: video.id,
-    title: video.snippet.title,
-    thumbnail: video.snippet.thumbnails.medium.url,
-    channelName: video.snippet.channelTitle,
-    duration: video.contentDetails.duration,
-    publishedAt: video.snippet.publishedAt,
-  }));
+  const channel = data.items[0];
+  return {
+    channelId: channel.id,
+    channelTitle: channel.snippet.title,
+    channelThumbnail: channel.snippet.thumbnails.high?.url || channel.snippet.thumbnails.default.url,
+    channelDescription: channel.snippet.description,
+  };
 }
