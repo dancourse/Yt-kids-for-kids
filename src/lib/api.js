@@ -99,4 +99,19 @@ export const api = {
       body: { videoId, videoTitle, watchDuration },
     });
   },
+
+  // YouTube URL helpers
+  addVideoFromUrl(profileId, videoUrl) {
+    return request(`/youtube-add-video?profileId=${profileId}`, {
+      method: 'POST',
+      body: { videoUrl },
+    });
+  },
+
+  addCreatorFromUrl(profileId, channelUrl) {
+    return request(`/youtube-add-creator?profileId=${profileId}`, {
+      method: 'POST',
+      body: { channelUrl },
+    });
+  },
 };

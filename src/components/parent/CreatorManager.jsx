@@ -15,9 +15,10 @@ export default function CreatorManager({ profileId }) {
   const loadCreators = async () => {
     try {
       const response = await api.getCreators(profileId);
-      setCreators(response.creators);
+      setCreators(response.creators || []);
     } catch (err) {
       setError(err.message);
+      setCreators([]);
     } finally {
       setLoading(false);
     }
@@ -29,7 +30,7 @@ export default function CreatorManager({ profileId }) {
     setAdding(true);
 
     try {
-      await api.addCreator(profileId, channelUrl);
+      await api.addCreatorFromUrl(profileId, channelUrl);
       setChannelUrl('');
       await loadCreators();
     } catch (err) {

@@ -16,9 +16,11 @@ export default function Dashboard() {
   const loadProfiles = async () => {
     try {
       const data = await api.getProfiles();
-      setProfiles(data.profiles);
+      setProfiles(data?.profiles || []); // Safe fallback
     } catch (err) {
-      setError(err.message);
+      console.error('Failed to load profiles:', err);
+      setError(err.message || 'Failed to load profiles');
+      setProfiles([]); // Ensure profiles is always an array
     } finally {
       setLoading(false);
     }

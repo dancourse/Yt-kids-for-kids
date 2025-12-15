@@ -15,9 +15,10 @@ export default function VideoManager({ profileId }) {
   const loadVideos = async () => {
     try {
       const response = await api.getVideos(profileId);
-      setVideos(response.videos);
+      setVideos(response.approvedVideos || []);
     } catch (err) {
       setError(err.message);
+      setVideos([]);
     } finally {
       setLoading(false);
     }
@@ -29,7 +30,7 @@ export default function VideoManager({ profileId }) {
     setAdding(true);
 
     try {
-      await api.addVideo(profileId, videoUrl);
+      await api.addVideoFromUrl(profileId, videoUrl);
       setVideoUrl('');
       await loadVideos();
     } catch (err) {
