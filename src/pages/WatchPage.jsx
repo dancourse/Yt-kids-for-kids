@@ -37,20 +37,53 @@ export default function WatchPage() {
   const loadVideos = async () => {
     setLoading(true);
     try {
-      const data = await api.getVideos(profileId);
+      const [videosData, creatorsData] = await Promise.all([
+        api.getVideos(profileId),
+        api.getCreators(profileId),
+      ]);
 
-      // Get approved videos and filter out blocked ones
-      const approvedVideos = data?.approvedVideos || [];
-      const blockedVideoIds = new Set((data?.blockedVideos || []).map(v => v.videoId));
+      // Get individually approved videos
+      const approvedVideos = videosData?.approvedVideos || [];
+      const blockedVideoIds = new Set((videosData?.blockedVideos || []).map(v => v.videoId));
 
-      // Filter out blocked videos
-      const filteredVideos = approvedVideos.filter(v => !blockedVideoIds.has(v.videoId));
+      // Fetch videos from all approved creators
+      const creatorVideos = [];
+      const creators = creatorsData?.creators || [];
 
-      setVideos(filteredVideos);
+      for (const creator of creators) {
+        try {
+          const response = await fetch(`/api/youtube-creator-videos?channelId=${creator.channelId}`);
+          if (response.ok) {
+            const data = await response.json();
+            creatorVideos.push(...(data.videos || []));
+          }
+        } catch (err) {
+          console.error(`Failed to load videos for creator ${creator.channelTitle}:`, err);
+        }
+      }
+
+      // Merge and deduplicate videos
+      const allVideosMap = new Map();
+
+      // Add individually approved videos first (higher priority)
+      approvedVideos.forEach(video => {
+        if (!blockedVideoIds.has(video.videoId)) {
+          allVideosMap.set(video.videoId, video);
+        }
+      });
+
+      // Add creator videos
+      creatorVideos.forEach(video => {
+        if (!blockedVideoIds.has(video.videoId) && !allVideosMap.has(video.videoId)) {
+          allVideosMap.set(video.videoId, video);
+        }
+      });
+
+      setVideos(Array.from(allVideosMap.values()));
     } catch (err) {
       console.error('Failed to load videos:', err);
       setError(err.message || 'Failed to load videos');
-      setVideos([]); // Ensure videos is always an array
+      setVideos([]);
     } finally {
       setLoading(false);
     }
