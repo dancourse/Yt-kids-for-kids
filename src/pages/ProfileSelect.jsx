@@ -2,25 +2,25 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileCard from '../components/kids/ProfileCard';
 import { APP_VERSION } from '../lib/constants';
-import { getProfiles, initializeStorage } from '../lib/storage';
+import { api } from '../lib/api';
 
 export default function ProfileSelect() {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     loadProfiles();
   }, []);
 
-  const loadProfiles = () => {
+  const loadProfiles = async () => {
     try {
-      // Initialize and load profiles from localStorage
-      initializeStorage();
-      const loadedProfiles = getProfiles();
-      setProfiles(loadedProfiles);
-    } catch (error) {
-      console.error('Failed to load profiles:', error);
+      const data = await api.getProfiles();
+      setProfiles(data.profiles);
+    } catch (err) {
+      console.error('Failed to load profiles:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
