@@ -1,0 +1,16 @@
+{
+  "name": "KiddoTube - Safe YouTube for Kids",
+  "short_name": "KiddoTube",
+  "description": "Parent-controlled YouTube viewing for kids",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3F4F6",
+  "theme_color": "#8B5CF6",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
